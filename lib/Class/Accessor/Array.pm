@@ -26,8 +26,9 @@ sub import {
         my $code_str = 'sub { my $class = shift; bless [], $class }';
 
         #say "D:constructor code for class $caller: ", $code_str;
-        unless (*{"$caller\::new"}{CODE}) {
-            *{"$caller\::new"} = eval $code_str;
+        my $constructor = $spec->{constructor} || "new";
+        unless (*{"$caller\::$constructor"}{CODE}) {
+            *{"$caller\::$constructor"} = eval $code_str;
             die if $@;
         };
     };
