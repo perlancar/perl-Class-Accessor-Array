@@ -31,7 +31,7 @@ sub import {
             *{"$caller\::$constructor"} = eval $code_str;
             die if $@;
         };
-    };
+    }
 }
 
 1;
@@ -72,4 +72,5 @@ This module is a builder for array-backed classes.
 =head1 SEE ALSO
 
 Other class builders for array-backed objects: L<Class::XSAccessor::Array>,
-L<Class::ArrayObjects>, L<Object::ArrayType::New>.
+L<Class::Accessor::Array::Glob>, L<Class::ArrayObjects>,
+L<Object::ArrayType::New>.
