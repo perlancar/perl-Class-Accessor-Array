@@ -68,8 +68,15 @@ C<$obj> is now:
 
 This module is a builder for array-backed classes.
 
+Note that if you're looking to reduce memory storage usage, an object based on
+Perl array is not that much-more-space-efficient compared to the hash-based
+object. Try representing an object as a pack()-ed string instead using
+L<Class::Accessor::PackedString>.
+
 
 =head1 SEE ALSO
+
+L<Class::Accessor::PackedString> and L<Class::Accessor::PackedString::Fields>.
 
 Other class builders for array-backed objects: L<Class::XSAccessor::Array>,
 L<Class::Accessor::Array::Glob>, L<Class::ArrayObjects>,
