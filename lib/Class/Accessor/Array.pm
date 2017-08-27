@@ -3,11 +3,20 @@ package Class::Accessor::Array;
 # DATE
 # VERSION
 
+#IFUNBUILT
+use strict 'subs', 'vars';
+use warnings;
+#END IFUNBUILT
+
 sub import {
     my ($class0, $spec) = @_;
     my $caller = caller();
 
+    my $class = $caller;
+
+#IFUNBUILT
     no warnings 'redefine';
+#END IFUNBUILT
 
     # generate accessors
     for my $meth (keys %{$spec->{accessors}}) {
@@ -17,18 +26,30 @@ sub import {
         $code_str .= "\$_[0][$idx]; ";
         $code_str .= "}";
         #say "D:accessor code for $meth: ", $code_str;
-        *{"$caller\::$meth"} = eval $code_str;
+        *{"$class\::$meth"} = eval $code_str;
         die if $@;
     }
 
     # generate constructor
     {
-        my $code_str = 'sub { my $class = shift; bless [], $class }';
+        my $code_str;
+        $code_str  = 'sub { my ($class, %args) = @_;';
+        if (@{"$class\::ISA"}) {
+            $code_str .= ' require '.${"$class\::ISA"}[0].';';
+            $code_str .= ' my $self = '.${"$class\::ISA"}[0].'->new(map {($_=>delete $args{$_})}'.
+                ' grep {'.(join " && ", map {'$_ ne \''.$_.'\''} keys %{$spec->{accessors}}).'} keys %args);';
+            $code_str .= ' $self = bless $self, \''.$class.'\';';
+        } else {
+            $code_str .= ' my $self = bless [], $class;';
+        }
+        $code_str .= ' for my $key (grep {'.(join " || ", map {'$_ eq \''.$_.'\''} keys %{$spec->{accessors}}).'} keys %args) { $self->$key(delete $args{$key}) }';
+        $code_str .= ' die "Unknown $class attributes in constructor: ".join(", ", sort keys %args) if keys %args;';
+        $code_str .= ' $self }';
 
-        #say "D:constructor code for class $caller: ", $code_str;
+        #print "D:constructor code for class $class: ", $code_str, "\n";
         my $constructor = $spec->{constructor} || "new";
-        unless (*{"$caller\::$constructor"}{CODE}) {
-            *{"$caller\::$constructor"} = eval $code_str;
+        unless (*{"$class\::$constructor"}{CODE}) {
+            *{"$class\::$constructor"} = eval $code_str;
             die if $@;
         };
     }
@@ -60,9 +81,23 @@ In code that uses your class:
  $obj->foo(1980);
  $obj->bar(12);
 
+or:
+
+ my $obj = Your::Class->new(foo => 1, bar => 2);
+
 C<$obj> is now:
 
  bless([1980, 12], "Your::Class");
+
+To subclass, in F<lib/Your/Subclass.pm>:
+
+ package Your::Subclass;
+ our @ISA = qw(Your::Class);
+ use Class::Accessor::Array {
+     accessors => {
+         baz => 2,
+     },
+ };
 
 
 =head1 DESCRIPTION
@@ -85,8 +120,10 @@ You have to set the attributes manually:
  $obj->bar(2);
 
 If you subclass from another class that uses L<Class::Accessor::Array>, you must
-make sure that you choose an index that has not already been used (unless you
-deliberately want to share storage space with an existing attribute).
+make sure that: 1) the parent class' constructor is C<new>; 2) you choose
+attribute array indices that have not already been used (unless you deliberately
+want to share storage space with attributes existing in the parent class).
+Multiple inheritance is not supported.
 
 Note that if you're looking to reduce memory storage usage, an object based on
 Perl array is not that much-more-space-efficient compared to the hash-based
