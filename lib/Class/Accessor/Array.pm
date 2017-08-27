@@ -45,6 +45,7 @@ In F<lib/Your/Class.pm>:
 
  package Your::Class;
  use Class::Accessor::Array {
+     # constructor => 'new',
      accessors => {
          foo => 0,
          bar => 1,
@@ -67,6 +68,25 @@ C<$obj> is now:
 =head1 DESCRIPTION
 
 This module is a builder for array-backed classes.
+
+You can change the constructor name from the default C<new> using the
+C<constructor> parameter.
+
+Currently the built constructor does not accept parameters to set the
+attributes, e.g.:
+
+ my $obj = Your::Class->new(foo=>1, bar=>2); # not supported
+
+You have to set the attributes manually:
+
+ # supported
+ my $obj = Your::Class->new;
+ $obj->foo(1);
+ $obj->bar(2);
+
+If you subclass from another class that uses L<Class::Accessor::Array>, you must
+make sure that you choose an index that has not already been used (unless you
+deliberately want to share storage space with an existing attribute).
 
 Note that if you're looking to reduce memory storage usage, an object based on
 Perl array is not that much-more-space-efficient compared to the hash-based
